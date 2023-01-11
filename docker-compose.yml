@@ -1,0 +1,48 @@
+version: '3.5'
+
+services:
+
+  nginx_server_php:
+    container_name: "nginx_server_php"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html:cached
+
+  nginx_server:
+    container_name: "nginx_server"
+    image: nginx:latest
+    volumes:
+      - './docker/nginx_server/conf.d:/etc/nginx/conf.d:ro'
+      - ./certbot/www:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/nginx/ssl/:ro
+      - .:/var/www/html:cached
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - certbot
+      - nginx_server_php
+      - mysql
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
+
+  mysql:
+    container_name: "nginx_server_mysql"
+    image: mysql:5
+    volumes:
+      - './docker/mysql/init:/docker-entrypoint-initdb.d/:ro'
+    command: --max_allowed_packet=64M
+    environment:
+      MYSQL_USER: $DB_USER
+      MYSQL_PASSWORD: $DB_PASSWORD
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_DATABASE: $DB_NAME
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "${CONTAINER_DB_PORT}:3306"
