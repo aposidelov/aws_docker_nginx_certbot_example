@@ -37,7 +37,11 @@ services:
     image: mysql:5
     volumes:
       - './docker/mysql/init:/docker-entrypoint-initdb.d/:ro'
-    command: --max_allowed_packet=64M
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
     environment:
       MYSQL_USER: $DB_USER
       MYSQL_PASSWORD: $DB_PASSWORD
